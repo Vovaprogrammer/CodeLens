@@ -1,0 +1,6 @@
+sentence-transformers
+chromadb
+streamlit
+fastapi
+uvicorn
+tree-sitter-languages
