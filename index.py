@@ -55,7 +55,7 @@ def main():
     if langs:
         print(f"  Языки           : {', '.join(f'{k}={v}' for k, v in langs.items())}")
     print()
-    print("Запусти интерфейс: streamlit run app.py")
+    print("Запусти интерфейс: python -m streamlit run app.py")
 
 
 if __name__ == "__main__":

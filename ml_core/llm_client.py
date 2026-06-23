@@ -1,8 +1,6 @@
 """
-LLM клиент для CodeLens RAG.
-Поддерживает два провайдера с переключением в UI:
-  - Ollama (локально, mistral:7b)
-  - OpenRouter (облачно, бесплатный tier: mistral-7b-instruct)
+CodeLens RAG — Клиент для OpenRouter API.
+Оставлена только автоматическая бесплатная модель.
 """
 
 import os
@@ -12,11 +10,20 @@ import urllib.error
 from typing import List, Dict, Any, Optional
 
 
-SYSTEM_PROMPT = """Ты — ассистент для анализа кода. Пользователь задаёт вопрос о проекте,
-а ты получаешь релевантные фрагменты кода, найденные поиском.
-Твоя задача: дать краткий, точный ответ на русском или английском (в зависимости от языка вопроса),
-опираясь ТОЛЬКО на предоставленные фрагменты.
-Не придумывай то, чего нет в коде. Если ответ неизвестен из фрагментов — так и скажи."""
+SYSTEM_PROMPT = """Ты — ИИ-ассистент для анализа кода в системе CodeLens. 
+Помогай разработчику понять логику проекта на основе предоставленных фрагментов кода.
+
+Твои правила:
+1. Отвечай строго на языке вопроса (если спросили на русском — отвечай на русском, если на английском — на английском).
+2. Опирайся только на предоставленный в запросе код. Если информации в чанках нет, вежливо ответь, что в данных фрагментах логика не найдена.
+3. Форматируй ответ с помощью Markdown, чтобы его было удобно читать:
+
+### 🎯 Суть ответа
+(Краткий и понятный ответ на вопрос)
+
+### ⚙️ Разбор логики
+(Пояснение, как это устроена в коде, с упоминанием названий файлов или функций из контекста)
+"""
 
 
 def _build_context(chunks: List[Dict[str, Any]]) -> str:
@@ -39,74 +46,16 @@ def _build_messages(query: str, chunks: List[Dict[str, Any]]) -> List[Dict]:
     ]
 
 
-# ──────────────────────────────────────────────
-# Ollama
-# ──────────────────────────────────────────────
-
-def check_ollama_available(base_url: str = "http://localhost:11434") -> bool:
-    try:
-        req = urllib.request.Request(f"{base_url}/api/tags", method="GET")
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            return resp.status == 200
-    except Exception:
-        return False
-
-
-def ollama_generate(
-    query: str,
-    chunks: List[Dict[str, Any]],
-    model: str = "mistral:7b",
-    base_url: str = "http://localhost:11434",
-) -> str:
-    messages = _build_messages(query, chunks)
-    payload = json.dumps({
-        "model": model,
-        "messages": messages,
-        "stream": False,
-        "options": {"temperature": 0.2, "num_predict": 1024},
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        f"{base_url}/api/chat",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data.get("message", {}).get("content", "").strip()
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Ollama HTTP {e.code}: {body}") from e
-    except Exception as e:
-        raise RuntimeError(f"Ollama недоступен: {e}") from e
-
-
-# ──────────────────────────────────────────────
-# OpenRouter
-# ──────────────────────────────────────────────
-
-OPENROUTER_MODELS = {
-    "mistral-7b (free)":       "mistralai/mistral-7b-instruct:free",
-    "llama-3-8b (free)":       "meta-llama/llama-3-8b-instruct:free",
-    "gemma-2-9b (free)":       "google/gemma-2-9b-it:free",
-    "deepseek-r1 (free)":      "deepseek/deepseek-r1-0528:free",
-}
-
-
 def openrouter_generate(
     query: str,
     chunks: List[Dict[str, Any]],
     api_key: str,
-    model_label: str = "mistral-7b (free)",
 ) -> str:
-    model_id = OPENROUTER_MODELS.get(model_label, "mistralai/mistral-7b-instruct:free")
     messages = _build_messages(query, chunks)
     payload = json.dumps({
-        "model": model_id,
+        "model": "openrouter/free",  # Всегда автомодель
         "messages": messages,
-        "temperature": 0.2,
+        "temperature": 0.1,
         "max_tokens": 1024,
     }).encode("utf-8")
 
@@ -122,53 +71,31 @@ def openrouter_generate(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=45) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data["choices"][0]["message"]["content"].strip()
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
+        if e.code == 429:
+            raise RuntimeError(
+                "Превышены лимиты запросов (HTTP 429) на бесплатном тарифе OpenRouter. "
+                "Пожалуйста, подождите 5-10 секунд и повторите попытку."
+            )
         raise RuntimeError(f"OpenRouter HTTP {e.code}: {body}") from e
     except Exception as e:
-        raise RuntimeError(f"OpenRouter error: {e}") from e
+        raise RuntimeError(f"Ошибка сети OpenRouter: {e}") from e
 
-
-# ──────────────────────────────────────────────
-# Единый интерфейс
-# ──────────────────────────────────────────────
 
 class LLMClient:
-    """
-    Единый клиент LLM. Провайдер выбирается в Streamlit UI.
-    provider: "ollama" | "openrouter"
-    """
+    """Единый изолированный клиент OpenRouter AI Автомодели."""
 
-    def __init__(
-        self,
-        provider: str = "ollama",
-        ollama_model: str = "mistral:7b",
-        ollama_url: str = "http://localhost:11434",
-        openrouter_api_key: Optional[str] = None,
-        openrouter_model_label: str = "mistral-7b (free)",
-    ):
-        self.provider = provider
-        self.ollama_model = ollama_model
-        self.ollama_url = ollama_url
+    def __init__(self, openrouter_api_key: Optional[str] = None):
         self.openrouter_api_key = openrouter_api_key or os.getenv("OPENROUTER_API_KEY", "")
-        self.openrouter_model_label = openrouter_model_label
 
     def generate(self, query: str, chunks: List[Dict[str, Any]]) -> str:
-        if self.provider == "ollama":
-            return ollama_generate(query, chunks, self.ollama_model, self.ollama_url)
-        elif self.provider == "openrouter":
-            if not self.openrouter_api_key:
-                raise RuntimeError("OpenRouter API key не задан. Укажи его в боковой панели.")
-            return openrouter_generate(query, chunks, self.openrouter_api_key, self.openrouter_model_label)
-        else:
-            raise ValueError(f"Неизвестный провайдер LLM: {self.provider}")
+        if not self.openrouter_api_key:
+            raise RuntimeError("API-ключ OpenRouter не задан. Пожалуйста, укажите его в боковой панели.")
+        return openrouter_generate(query, chunks, self.openrouter_api_key)
 
     def is_available(self) -> bool:
-        if self.provider == "ollama":
-            return check_ollama_available(self.ollama_url)
-        elif self.provider == "openrouter":
-            return bool(self.openrouter_api_key)
-        return False
+        return bool(self.openrouter_api_key)
