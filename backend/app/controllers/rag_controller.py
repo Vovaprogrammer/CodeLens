@@ -3,11 +3,11 @@ from ml_core import ChromaDBClient, EmbeddingModelRegistry
 from backend.app.services.search_service import SearchService
 
 class RAGController:
-    def __init__(self):
-        self.db_client = ChromaDBClient()
-        self.embedder = EmbeddingModelRegistry()
+    def __init__(self, progects_path, model_key: str = "paraphrase-multilingual", db_path: str = "data/vector_db"):
+        self.db_client = ChromaDBClient(db_path=db_path)
+        self.embedder = EmbeddingModelRegistry(model_key=model_key)
         self.search_service = SearchService(self.db_client, self.embedder)
-        self.project_name = "gymhero"
+        self.project_name = progects_path
 
     def get_indexed_files(self) -> List[str]:
         """Возвращает дерево файлов проекта для левой панели"""
@@ -46,30 +46,22 @@ class RAGController:
         self.search_service = SearchService(self.db_client, self.embedder)
         print(f"Система переключена на поиск через модель: {model_name}")
 
-    def find_relevant_code(self, query: str) -> List[Dict[str, Any]]:
+    def find_relevant_code(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
         Ищет релевантный код и возвращает данные в формате твоей схемы CodeChunk
         """
         raw_chunks = self.search_service.search_code(
             project_name=self.project_name, 
             query=query, 
-            top_k=5
+            top_k=top_k
         )
         
         processed_chunks = []
         for chunk in raw_chunks:
             metadata = chunk.get("metadata", {})
             
-            # Нормализация путей "на лету" для защиты от багов Windows
             raw_path = metadata.get("file_path", "unknown").replace("\\", "/")
-            if "gymhero/gymhero/" in raw_path:
-                idx = raw_path.find("gymhero/gymhero/")
-                clean_path = raw_path[idx + 8:]
-            elif "gymhero/" in raw_path:
-                idx = raw_path.find("gymhero/")
-                clean_path = raw_path[idx:]
-            else:
-                clean_path = raw_path
+            clean_path = raw_path
             
             processed_chunks.append({
                 "content": chunk.get("content", ""),
