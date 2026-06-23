@@ -1,10 +1,12 @@
 import os
 from .base import BaseParser
-from .code_splitter import PythonParser
+from .code_splitter import PythonParser, OtherlanguageParser
 
 class SplitterFactory:
     _parsers = {
-        ".py": PythonParser()
+        ".py": PythonParser(),
+        ".java": OtherlanguageParser("java"),
+        ".js": OtherlanguageParser("javascript")
     }
 
     @classmethod

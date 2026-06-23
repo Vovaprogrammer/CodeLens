@@ -3,13 +3,14 @@ CodeLens — Streamlit UI (Premium VS Code IDE Theme v2.2)
 Запуск: streamlit run app.py
 """
 
-import json
 import time
 import os
-import sys
 from pathlib import Path
 
 import streamlit as st
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # ──────────────────────────────────────────────
 # Page конфиг (Первая команда)
@@ -25,8 +26,6 @@ st.set_page_config(
 # Проверка импортов ядра
 # ──────────────────────────────────────────────
 try:
-    from ml_core.db_client import ChromaDBClient
-    from ml_core.models import EmbeddingModelRegistry
     from backend.app.controllers.rag_controller import RAGController
     from ml_core.llm_client import LLMClient
 except ImportError as e:
@@ -37,26 +36,24 @@ except ImportError as e:
 # Жесткое форматирование под премиальную Dark-тему VS Code
 # Изолирует приложение от переключения глобальной светлой темы
 # ──────────────────────────────────────────────
+
 st.markdown("""
 <style>
-/* Корневой фон приложения и принудительный цвет текста (Исключая блоки кода!) */
+/* 1. КОРНЕВЫЕ СТИЛИ СТРАНИЦЫ И БОКОВОЙ ПАНЕЛИ */
 .stApp, [data-testid="stAppViewContainer"] {
     background-color: #181818 !important;
     color: #e0e0e0 !important;
 }
 
-/* Безопасное окрашивание заголовков и текста без ломания span-тегов синтаксиса */
 h1, h2, h3, h4, p, label, .stMarkdown:not(code) {
     color: #e0e0e0 !important;
 }
 
-/* Кастомизация боковой панели */
 [data-testid="stSidebar"], [data-testid="stSidebarUserContent"] {
     background-color: #1f1f1f !important;
     border-right: 1px solid #2d2d2d !important;
 }
 
-/* Заголовки панелей IDE */
 .panel-title {
     font-family: 'Segoe UI', sans-serif;
     font-weight: 600;
@@ -69,53 +66,115 @@ h1, h2, h3, h4, p, label, .stMarkdown:not(code) {
     padding-bottom: 6px;
 }
 
-/* Проводник файлов (кнопки-файлы в левой панели) */
-.streamlit-expanderHeader {
-    background-color: #1f1f1f !important;
-    border: none !important;
-    color: #569cd6 !important;
-    font-family: 'Consolas', monospace;
-    font-size: 13px !important;
+/* 2. УЛЬТИМАТИВНОЕ ВЫРАВНИВАНИЕ КНОПОК ПРОВОДНИКА ВЛЕВО */
+/* Нацеливаемся на контейнер, саму кнопку и внутренний текст (span) */
+div.stButton {
+    width: 100% !important;
+    margin: 0px !important;
+    padding: 0px !important;
 }
 
-/* СТИЛИЗАЦИЯ КНОПОК ДЛЯ ВЫРАЗИТЕЛЬНОСТИ */
-/* 1. Обычные кнопки и кнопки-файлы */
 div.stButton > button {
-    background-color: #252526 !important;
-    color: #9cdcfe !important;
-    border: 1px solid #3c3c3c !important;
-    border-radius: 4px !important;
-    padding: 6px 12px !important;
-    transition: all 0.2s ease-in-out !important;
-    font-family: 'Consolas', monospace !important;
-    text-align: left !important;
+    background-color: transparent !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0px !important;
+    box-shadow: none !important;
+    
+    /* Принудительно растягиваем во всю ширину колонки и жмем влево */
     width: 100% !important;
+    display: flex !important;
+    justify-content: flex-start !important; 
+    align-items: center !important;
+    text-align: left !important;
+    
+    /* Схлопываем вертикальные отступы */
+    padding: 3px 6px !important;
+    margin: 0px !important;
+    min-height: 26px !important;
+    height: 26px !important;
+    line-height: 26px !important;
+    
+    font-family: 'Consolas', monospace !important;
+    font-size: 13px !important;
+    color: #cccccc !important;
+    
+    white-space: pre !important; /* Сохраняет наши Юникод-пробелы \u00A0 */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
+
+/* Убиваем центровку внутреннего контейнера Streamlit внутри кнопки */
+div.stButton > button div, 
+div.stButton > button span, 
+div.stButton > button p {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    margin: 0 !important;
+    display: block !important;
+}
+
+/* Ховер-эффект на ВСЮ ширину колонки проводника */
 div.stButton > button:hover {
     background-color: #2a2d2e !important;
-    border-color: #007acc !important;
-    color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.3) !important;
+    color: #569cd6 !important;
 }
 
-/* 2. Главные акцентные кнопки (Выполнить RAG, Запустить индексацию) */
+
+/* 2. ОТМЕНА ЦЕНТРОВКИ ВНУТРИ КНОПОК ПРОВОДНИКА */
+[data-testid="column"]:first-child div.stButton > button div, 
+[data-testid="column"]:first-child div.stButton > button span, 
+[data-testid="column"]:first-child div.stButton > button p {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    margin: 0 !important;
+    display: block !important;
+}
+
+/* 3. ХОВЕР-ЭФФЕКТ ДЛЯ ПРОВОДНИКА */
+[data-testid="column"]:first-child div.stButton > button:hover {
+    background-color: #2a2d2e !important;
+    color: #569cd6 !important;
+}
+
+/* Полное уничтожение межстрочных интервалов сетки Streamlit */
+div[data-testid="stVerticalBlockRoot"] div[data-testid="stVerticalBlock"] > div,
+[data-testid="element-container"] {
+    padding-bottom: 0px !important;
+    margin-bottom: 0px !important;
+    margin-top: 0px !important;
+    padding-top: 0px !important;
+    height: auto !important;
+}
+div[data-testid="stVerticalBlock"] {
+    gap: 0px !important;
+}
+
+/* 3. ЗАЩИТА И СТИЛИЗАЦИЯ КНОПКИ "ВЫПОЛНИТЬ RAG" (Параметр primary=True) */
 div.stButton > button[data-testid="baseButton-primary"] {
     background: linear-gradient(135deg, #007acc, #005999) !important;
     color: #ffffff !important;
     font-weight: bold !important;
     text-align: center !important;
+    justify-content: center !important;
+    align-items: center !important;
     border: none !important;
     padding: 10px 20px !important;
     border-radius: 4px !important;
     box-shadow: 0 4px 12px rgba(0, 122, 204, 0.4) !important;
+    height: auto !important;
+    width: auto !important; /* Главная кнопка не должна быть на весь экран */
+    margin-top: 10px !important;
+    display: inline-flex !important;
 }
 div.stButton > button[data-testid="baseButton-primary"]:hover {
     background: linear-gradient(135deg, #0098ff, #007acc) !important;
     box-shadow: 0 6px 16px rgba(0, 122, 204, 0.6) !important;
     transform: translateY(-1px);
+    color: #ffffff !important;
 }
 
-/* Карточка выдачи контекста RAG */
+/* 4. ОСТАЛЬНЫЕ КОМПОНЕНТЫ ИНТЕРФЕЙСА */
 .chunk-card {
     background: #1f1f1f !important;
     border: 1px solid #2d2d2d !important;
@@ -130,13 +189,8 @@ div.stButton > button[data-testid="baseButton-primary"]:hover {
     color: #4ec9b0 !important;
     font-family: 'Consolas', monospace;
 }
-.chunk-score {
-    color: #ce9178 !important;
-    font-size: 12px;
-    font-weight: bold;
-}
+.chunk-score { color: #ce9178 !important; font-size: 12px; font-weight: bold; }
 
-/* Окно терминала чата ИИ */
 .llm-box {
     background: #1e1e1e !important;
     border: 1px solid #3c3c3c !important;
@@ -145,24 +199,15 @@ div.stButton > button[data-testid="baseButton-primary"]:hover {
     margin-top: 10px;
     margin-bottom: 20px;
 }
-.llm-title {
-    color: #569cd6 !important;
-    font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 8px;
-}
+.llm-title { color: #569cd6 !important; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
 
-/* Виджеты ввода Streamlit */
 div[data-baseweb="input"], div[data-baseweb="select"] {
     background-color: #252526 !important;
     color: #ffffff !important;
     border: 1px solid #3c3c3c !important;
 }
-input {
-    color: #ffffff !important;
-}
+input { color: #ffffff !important; }
 
-/* Статистика с защитой от наложения (отступы) */
 .stat-tile {
     background: #1f1f1f;
     border: 1px solid #2d2d2d;
@@ -189,7 +234,7 @@ def _init_state():
         "search_time": 0.0,
         "chat_history": [],
         "selected_file": None,
-        "project_path": "gymhero",
+        "project_path": "projects",
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -198,9 +243,8 @@ def _init_state():
 _init_state()
 
 @st.cache_resource(show_spinner="Загрузка математической модели векторизации...")
-def get_controller(model_key: str, db_path: str) -> RAGController:
-    ctrl = RAGController()
-    ctrl.embedder.set_active_model(model_key)
+def get_controller(file_path, model_key: str, db_path: str) -> RAGController:
+    ctrl = RAGController(file_path, model_key=model_key, db_path=db_path)
     return ctrl
 
 # ──────────────────────────────────────────────
@@ -221,7 +265,7 @@ with st.sidebar:
         format_func=lambda x: "MiniLM-L12 (Быстро)" if x == "paraphrase-multilingual" else "BGE-M3 (Максимальная точность)",
     )
     db_path = st.text_input("Векторное хранилище", value="data/vector_db")
-    st.session_state.project_path = st.text_input("Код-директория для Explorer", value="gymhero")
+    st.session_state.project_path = st.text_input("Код-директория для Explorer", value="projects")
     
     top_k = st.slider("Фрагментов в контекст (Top-K)", 1, 15, 5)
     st.divider()
@@ -230,13 +274,28 @@ with st.sidebar:
     llm_enabled = st.toggle("Включить ответы ИИ", value=True)
 
     if llm_enabled:
-        st.info("🤖 **OpenRouter Авто-модель** включена по умолчанию.")
-        openrouter_key = st.text_input(
-            "API-ключ OpenRouter",
-            type="password",
-            value=os.getenv("OPENROUTER_API_KEY", "")
-        )
-        st.session_state.llm_client = LLMClient(openrouter_api_key=openrouter_key)
+        env_key = os.getenv("OPEN_ROUTER_API", "")
+        
+        if env_key:
+            st.success("🤖 Ключ OpenRouter успешно загружен из .env")
+            with st.expander("Посмотреть / Изменить API-ключ"):
+                openrouter_key = st.text_input(
+                    "API-ключ OpenRouter",
+                    type="password",
+                    value=env_key
+                )
+        else:
+            st.warning("⚠️ Ключ OPENROUTER_API_KEY не найден в .env")
+            openrouter_key = st.text_input(
+                "Введіть API-ключ вручную",
+                type="password",
+                value=""
+            )
+        
+        if openrouter_key:
+            st.session_state.llm_client = LLMClient(openrouter_api_key=openrouter_key)
+        else:
+            st.session_state.llm_client = None
     else:
         st.session_state.llm_client = None
 
@@ -249,7 +308,7 @@ with st.sidebar:
 # Инициализация ядра бэкенда
 if st.session_state.controller is None:
     try:
-        st.session_state.controller = get_controller(emb_model, db_path)
+        st.session_state.controller = get_controller(st.session_state.project_path, emb_model, db_path)
     except Exception as e:
         st.error(f"Ошибка ChromaDB: {e}")
         st.stop()
@@ -257,63 +316,121 @@ if st.session_state.controller is None:
 ctrl: RAGController = st.session_state.controller
 
 
-# Логика отрисовки проводника проекта
 def render_explorer_tree(root_dir):
     if not os.path.exists(root_dir):
         st.caption("📁 Директория не найдена")
         return
-    ignored = {'.git', '__pycache__', '.pytest_cache', 'venv', '.streamlit', 'data'}
+
+    ignored = {'.git', '__pycache__', '.pytest_cache', 'venv', '.streamlit', 'data', 'target'}
     
-    def _build(path):
+    if "expanded_folders" not in st.session_state:
+        st.session_state["expanded_folders"] = set()
+
+    def _build_flat_tree(current_path, depth=0):
         try:
-            entries = sorted(os.listdir(path), key=lambda x: (not os.path.isdir(os.path.join(path, x)), x.lower()))
+            entries = sorted(os.listdir(current_path), key=lambda x: (not os.path.isdir(os.path.join(current_path, x)), x.lower()))
+            
             for entry in entries:
                 if entry in ignored or entry.startswith('.'):
                     continue
-                full_path = os.path.join(path, entry)
-                if os.path.isdir(full_path):
-                    with st.expander(f"📁 {entry}", expanded=False):
-                        _build(full_path)
+                    
+                full_path = os.path.join(current_path, entry)
+                is_dir = os.path.isdir(full_path)
+                
+                indent = "\u00A0" * (depth * 4)
+                
+                if is_dir:
+                    is_expanded = full_path in st.session_state.expanded_folders
+                    icon = "📂" if is_expanded else "📁"
+                    
+                    # Добавляем контейнер с классом 'explorer-node'
+                    if st.button(f"{indent}{icon} {entry}", key=f"dir_{full_path}", use_container_width=True):
+                        if is_expanded:
+                            st.session_state.expanded_folders.remove(full_path)
+                        else:
+                            st.session_state.expanded_folders.add(full_path)
+                        st.rerun()
+                    
+                    if is_expanded:
+                        _build_flat_tree(full_path, depth + 1)
+
+                # --- Для файлов ---
                 else:
-                    if st.button(f"📄 {entry}", key=f"file_{full_path}"):
+                    if st.button(f"{indent}📄 {entry}", key=f"file_{full_path}", use_container_width=True):
                         st.session_state.selected_file = full_path
+                        st.rerun()
+                        
         except Exception as e:
             st.error(f"Ошибка проводника: {e}")
-    _build(root_dir)
+
+    _build_flat_tree(root_dir, depth=0)
 
 
 # ══════════════════════════════════════════════
 # ЭКРАН: РАЗРАБОТКА & ПОИСК
 # ══════════════════════════════════════════════
 if page == "Разработка & Поиск":
+    
+    def get_language_by_filename(filename: str) -> str:
+        if not filename:
+            return "text"
+        ext = Path(filename).suffix.lower().lstrip('.')
+        mapping = {
+            "py": "python", "pyw": "python", "java": "java",
+            "js": "javascript", "ts": "typescript", "json": "json",
+            "yml": "yaml", "yaml": "yaml", "xml": "xml",
+            "gradle": "groovy", "properties": "properties", "md": "markdown"
+        }
+        return mapping.get(ext, "text")
+
+    if "search_results" not in st.session_state:
+        st.session_state.search_results = []
+    if "llm_answer" not in st.session_state:
+        st.session_state.llm_answer = ""
+    if "search_time" not in st.session_state:
+        st.session_state.search_time = 0.0
+    if "temp_query" not in st.session_state:
+        st.session_state.temp_query = ""
+
+    if st.session_state.temp_query:
+        current_query = st.session_state.temp_query
+        st.session_state.last_query = current_query
+        st.session_state.llm_answer = ""
+
+        results = ctrl.find_relevant_code(current_query, top_k=top_k)
+        st.session_state.search_results = results
+
+        if results and len(results) > 0:
+            top_file = results[0].get("file_path", "")
+            if os.path.exists(top_file):
+                st.session_state.selected_file = top_file
+            else:
+                potential_path = os.path.join(st.session_state.project_path, top_file)
+                if os.path.exists(potential_path):
+                    st.session_state.selected_file = potential_path
+
+        if llm_enabled and st.session_state.llm_client and results:
+            try:
+                answer = st.session_state.llm_client.generate(current_query, results)
+                st.session_state.llm_answer = answer
+                st.session_state.chat_history.append((current_query, answer))
+            except Exception as e:
+                st.session_state.llm_answer = f"{e}"
+        
+        st.session_state.temp_query = ""
+        st.rerun()
+
+
     col_explorer, col_editor, col_chat = st.columns([2.2, 4.8, 5])
 
-    # 1. Слева: Проводник
     with col_explorer:
         st.markdown('<div class="panel-title">📂 Проводник проекта</div>', unsafe_allow_html=True)
         render_explorer_tree(st.session_state.project_path)
 
-    # 2. По центру: Просмотр кода
-    with col_editor:
-        st.markdown('<div class="panel-title">📝 Просмотр кода</div>', unsafe_allow_html=True) # Исправлено название
-        if st.session_state.selected_file and os.path.exists(st.session_state.selected_file):
-            st.caption(f"Файл: `{st.session_state.selected_file}`")
-            try:
-                with open(st.session_state.selected_file, "r", encoding="utf-8", errors="replace") as f:
-                    content = f.read()
-                ext = Path(st.session_state.selected_file).suffix.lower()
-                lang = "python" if ext in [".py", ".pyw"] else ("json" if ext == ".json" else "markdown")
-                st.code(content, language=lang, line_numbers=True)
-            except Exception as e:
-                st.error(f"Ошибка чтения файла: {e}")
-        else:
-            st.info("💡 Нажмите на любой файл в структуре слева для открытия.")
-
-    # 3. Справа: RAG Поиск и Чат
     with col_chat:
         st.markdown('<div class="panel-title">🤖 Интеллектуальный Поиск & ИИ Чат</div>', unsafe_allow_html=True)
         
-        query = st.text_input("Поисковый семантический запрос к репозиторию", placeholder="Например: как генерируется хэш пароля?", label_visibility="collapsed")
+        query_input = st.text_input("Поисковый семантический запрос к репозиторию", placeholder="Например: как генерируется хэш пароля?", label_visibility="collapsed")
         search_clicked = st.button("Выполнить RAG-анализ ⚡", use_container_width=True, type="primary")
 
         if st.session_state.chat_history and st.button("Очистить историю диалога 🗑️", use_container_width=True):
@@ -322,35 +439,42 @@ if page == "Разработка & Поиск":
             st.session_state.llm_answer = ""
             st.rerun()
 
-        # СТРОГАЯ ЛОГИКА: Выполняем RAG только тогда, когда кнопка реально нажата
-        if search_clicked and query.strip():
-            st.session_state.last_query = query.strip()
-            st.session_state.llm_answer = ""
+        if search_clicked and query_input.strip():
+            st.session_state.temp_query = query_input.strip()
+            st.rerun()
 
-            with st.spinner("Извлечение релевантных векторов из ChromaDB..."):
-                t0 = time.time()
-                try:
-                    results = ctrl.find_relevant_code(query.strip(), top_k=top_k)
-                except Exception:
-                    results = ctrl.find_relevant_code(query.strip())[:top_k]
+    with col_editor:
+        st.markdown('<div class="panel-title">📝 Просмотр кода</div>', unsafe_allow_html=True)
+        
+        if st.session_state.selected_file and os.path.exists(st.session_state.selected_file):
+            try:
+                with open(st.session_state.selected_file, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.read()
+                    lines = content.splitlines()
                 
-                st.session_state.search_time = time.time() - t0
-                st.session_state.search_results = results
+                lang = get_language_by_filename(st.session_state.selected_file)
 
-            # Обращение к OpenRouter
-            if llm_enabled and st.session_state.llm_client and results:
-                with st.spinner("Генерация ответа автоматической моделью OpenRouter..."):
-                    try:
-                        answer = st.session_state.llm_client.generate(query.strip(), results)
-                        st.session_state.llm_answer = answer
-                        st.session_state.chat_history.append((query.strip(), answer))
-                    except Exception as e:
-                        st.session_state.llm_answer = f"{e}"
+                target_start, target_end = None, None
+                if st.session_state.search_results:
+                    top = st.session_state.search_results[0]
+                    if top.get("file_path") == st.session_state.selected_file:
+                        target_start = top.get("start_line", 1)
+                        target_end = top.get("end_line", 1)
 
-        # Рендеринг результатов
+                st.caption(f"Файл: `{st.session_state.selected_file}`")
+
+                if target_start and target_end:
+                    st.markdown(f"🎯 **Найденный фрагмент (строки {target_start}-{target_end}):**")
+                    st.code(content, language=lang, line_numbers=True)
+                else:
+                    st.code(content, language=lang, line_numbers=True)
+                    
+            except Exception as e:
+                st.error(f"Ошибка чтения: {e}")
+
+    with col_chat:
         results = st.session_state.search_results
         if results:
-            # Блок метрик (поднят выше, убран <br>, добавлены безопасные CSS-отступы)
             sc1, sc2, sc3 = st.columns(3)
             sc1.markdown(f'<div class="stat-tile"><div class="stat-val">{len(results)}</div><div class="stat-lbl">фрагментов</div></div>', unsafe_allow_html=True)
             sc2.markdown(f'<div class="stat-tile"><div class="stat-val">{st.session_state.search_time:.3f}s</div><div class="stat-lbl">скорость поиска</div></div>', unsafe_allow_html=True)
@@ -374,7 +498,6 @@ if page == "Разработка & Поиск":
                 end = chunk.get("end_line", 1)
                 content = chunk.get("content", "")
 
-                # Расчет честного матча
                 raw_score = chunk.get("final_score") or chunk.get("score") or chunk.get("distance")
                 if isinstance(raw_score, (int, float)) and raw_score != 0:
                     if raw_score <= 2.0 and chunk.get("distance") is not None:
@@ -396,7 +519,8 @@ if page == "Разработка & Поиск":
                 </div>
                 """, unsafe_allow_html=True)
                 
-                st.code(content, language="python")
+                rag_lang = get_language_by_filename(file_path)
+                st.code(content, language=rag_lang)
 
 # ══════════════════════════════════════════════
 # ЭКРАН: ИНДЕКСАЦИЯ
@@ -407,7 +531,7 @@ elif page == "Индексация проекта":
 
     col1, col2 = st.columns([3, 1])
     with col1:
-        project_path = st.text_input("Путь к индексируемому репозиторию", value="gymhero")
+        project_path = st.text_input("Путь к индексируемому репозиторию", value=st.session_state.project_path)
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
         run_index = st.button("Запустить индексацию ▶", type="primary", use_container_width=True)

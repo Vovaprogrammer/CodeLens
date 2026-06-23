@@ -1,6 +1,7 @@
 import os
 import json
-from .search_service import SearchService
+import argparse
+from backend.app.services.search_service import SearchService
 from ml_core import ChromaDBClient, EmbeddingModelRegistry
 from ml_core.pipeline import IndexingPipeline 
 
@@ -12,6 +13,9 @@ def fix_chunk_id_format(chunk_id: str, project_name: str) -> str:
     Пример:
     'gymhero/crud/user.py_function_is_super_user_25' -> 'gymhero/crud/user.py:UserCRUDRepository.is_super_user:25'
     """
+    if chunk_id.startswith("projects/"):
+        chunk_id = chunk_id.replace("projects/", "", 1)
+        
     double_prefix = f"{project_name}/{project_name}/"
     if chunk_id.startswith(double_prefix):
         chunk_id = chunk_id.replace(double_prefix, f"{project_name}/", 1)
@@ -98,12 +102,29 @@ def generate_submission(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="CodeLens Submission Generator: генерация ответов для валидатора score.py"
+    )
+    parser.add_argument(
+        "--model",
+        default="paraphrase-multilingual",
+        choices=["paraphrase-multilingual", "bge-m3"],
+        help="Модель эмбеддингов (default: paraphrase-multilingual)",
+    )
+    parser.add_argument(
+        "--project-path", 
+        default="projects/gymhero", 
+        help="Путь к исходникам для индексации перед генерацией"
+    )
+
+    args = parser.parse_args()
     print("Инициализация клиентов для генерации...")
     db_client = ChromaDBClient()
-    embedder = EmbeddingModelRegistry()
+    embedder = EmbeddingModelRegistry(model_key=args.model)
     
-    PROJECT_SOURCE_PATH = "gymhero" 
-    PROJECT_NAME = "gymhero" 
+    PROJECT_NAME = "gymhero"
+    PROJECT_SOURCE_PATH = args.project_path
+    
     QUESTIONS_PATH = "eval_questions.json"  
     OUTPUT_PATH = "results.json"        
 

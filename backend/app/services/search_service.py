@@ -1,12 +1,10 @@
-import os
 from typing import List, Dict, Any
 from ml_core import ChromaDBClient, EmbeddingModelRegistry
 
 class SearchService:
-    def __init__(self, db_client: ChromaDBClient, embedder: EmbeddingModelRegistry, ollama_url: str = "http://localhost:11434"):
+    def __init__(self, db_client: ChromaDBClient, embedder: EmbeddingModelRegistry):
         self.db = db_client
         self.embedder = embedder
-        self.ollama_url = ollama_url
 
     def search_code(self, project_name: str, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         if not query:
@@ -88,6 +86,3 @@ class SearchService:
 
         formatted_candidates.sort(key=lambda x: x["final_score"], reverse=True)
         return formatted_candidates[:top_k]
-
-    def generate_rag_answer(self, query: str, context_chunks: List[Dict[str, Any]]) -> str:
-        pass
