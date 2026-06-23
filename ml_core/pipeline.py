@@ -47,6 +47,22 @@ class IndexingPipeline:
                     try:
                         parser = SplitterFactory.get_parser(file_path)
                         file_chunks = parser.parse_file(file_path)
+                        
+                        # Кроссплатформенная нормализация путей для тестов (score.py)
+                        for chunk in file_chunks:
+                            # 1. Принудительно переводим все слэши в прямой формат
+                            clean_path = chunk.file_path.replace("\\", "/")
+                            
+                            # 2. Убираем дублирование папок и абсолютные префиксы
+                            if "gymhero/gymhero/" in clean_path:
+                                idx = clean_path.find("gymhero/gymhero/")
+                                clean_path = clean_path[idx + 8:]  # Отрезаем первый "gymhero/"
+                            elif f"{project_name}/" in clean_path:
+                                idx = clean_path.find(f"{project_name}/")
+                                clean_path = clean_path[idx:]      # Оставляем путь начиная с "gymhero/"
+                                
+                            chunk.file_path = clean_path
+                        
                         all_chunks.extend(file_chunks)
                         
                         lang = ext.replace('.', '')

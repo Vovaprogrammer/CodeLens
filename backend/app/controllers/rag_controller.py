@@ -60,9 +60,20 @@ class RAGController:
         for chunk in raw_chunks:
             metadata = chunk.get("metadata", {})
             
+            # Нормализация путей "на лету" для защиты от багов Windows
+            raw_path = metadata.get("file_path", "unknown").replace("\\", "/")
+            if "gymhero/gymhero/" in raw_path:
+                idx = raw_path.find("gymhero/gymhero/")
+                clean_path = raw_path[idx + 8:]
+            elif "gymhero/" in raw_path:
+                idx = raw_path.find("gymhero/")
+                clean_path = raw_path[idx:]
+            else:
+                clean_path = raw_path
+            
             processed_chunks.append({
                 "content": chunk.get("content", ""),
-                "file_path": metadata.get("file_path", "unknown"),
+                "file_path": clean_path,
                 "element_type": metadata.get("element_type", "function"),
                 "name": metadata.get("name", "unknown"),
                 "start_line": int(metadata.get("start_line", 1)),
