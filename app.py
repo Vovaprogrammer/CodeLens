@@ -66,91 +66,76 @@ h1, h2, h3, h4, p, label, .stMarkdown:not(code) {
     padding-bottom: 6px;
 }
 
-/* 2. УЛЬТИМАТИВНОЕ ВЫРАВНИВАНИЕ КНОПОК ПРОВОДНИКА ВЛЕВО */
-/* Нацеливаемся на контейнер, саму кнопку и внутренний текст (span) */
-div.stButton {
+/* 2. СТРОГАЯ ИЗОЛЯЦИЯ КНОПОК ПРОВОДНИКА (ТОЛЬКО В ПЕРВОЙ КОЛОНКЕ) */
+div[data-testid="stColumn"]:first-child div.stButton,
+div[data-testid="column"]:first-child div.stButton {
     width: 100% !important;
     margin: 0px !important;
     padding: 0px !important;
 }
 
-div.stButton > button {
+div[data-testid="stColumn"]:first-child div.stButton > button,
+div[data-testid="column"]:first-child div.stButton > button {
     background-color: transparent !important;
     background: transparent !important;
     border: none !important;
     border-radius: 0px !important;
     box-shadow: none !important;
-    
-    /* Принудительно растягиваем во всю ширину колонки и жмем влево */
     width: 100% !important;
     display: flex !important;
     justify-content: flex-start !important; 
     align-items: center !important;
     text-align: left !important;
-    
-    /* Схлопываем вертикальные отступы */
     padding: 3px 6px !important;
     margin: 0px !important;
     min-height: 26px !important;
     height: 26px !important;
     line-height: 26px !important;
-    
     font-family: 'Consolas', monospace !important;
     font-size: 13px !important;
     color: #cccccc !important;
-    
-    white-space: pre !important; /* Сохраняет наши Юникод-пробелы \u00A0 */
+    white-space: pre !important; /* Сохраняет Юникод-пробелы \u00A0 */
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 
-/* Убиваем центровку внутреннего контейнера Streamlit внутри кнопки */
-div.stButton > button div, 
-div.stButton > button span, 
-div.stButton > button p {
+/* Отмена центровки внутреннего контейнера Streamlit внутри кнопок проводника */
+div[data-testid="stColumn"]:first-child div.stButton > button div, 
+div[data-testid="stColumn"]:first-child div.stButton > button span, 
+div[data-testid="stColumn"]:first-child div.stButton > button p,
+div[data-testid="column"]:first-child div.stButton > button div, 
+div[data-testid="column"]:first-child div.stButton > button span, 
+div[data-testid="column"]:first-child div.stButton > button p {
     text-align: left !important;
     justify-content: flex-start !important;
     margin: 0 !important;
     display: block !important;
 }
 
-/* Ховер-эффект на ВСЮ ширину колонки проводника */
-div.stButton > button:hover {
+/* Ховер-эффект на всю ширину колонки проводника */
+div[data-testid="stColumn"]:first-child div.stButton > button:hover,
+div[data-testid="column"]:first-child div.stButton > button:hover {
     background-color: #2a2d2e !important;
     color: #569cd6 !important;
 }
 
-
-/* 2. ОТМЕНА ЦЕНТРОВКИ ВНУТРИ КНОПОК ПРОВОДНИКА */
-[data-testid="column"]:first-child div.stButton > button div, 
-[data-testid="column"]:first-child div.stButton > button span, 
-[data-testid="column"]:first-child div.stButton > button p {
-    text-align: left !important;
-    justify-content: flex-start !important;
-    margin: 0 !important;
-    display: block !important;
-}
-
-/* 3. ХОВЕР-ЭФФЕКТ ДЛЯ ПРОВОДНИКА */
-[data-testid="column"]:first-child div.stButton > button:hover {
-    background-color: #2a2d2e !important;
-    color: #569cd6 !important;
-}
-
-/* Полное уничтожение межстрочных интервалов сетки Streamlit */
-div[data-testid="stVerticalBlockRoot"] div[data-testid="stVerticalBlock"] > div,
-[data-testid="element-container"] {
+/* Полное уничтожение межстрочных интервалов сетки СТРОГО внутри проводника */
+div[data-testid="stColumn"]:first-child div[data-testid="stVerticalBlockRoot"] div[data-testid="stVerticalBlock"] > div,
+div[data-testid="stColumn"]:first-child [data-testid="element-container"],
+div[data-testid="column"]:first-child div[data-testid="stVerticalBlockRoot"] div[data-testid="stVerticalBlock"] > div,
+div[data-testid="column"]:first-child [data-testid="element-container"] {
     padding-bottom: 0px !important;
     margin-bottom: 0px !important;
     margin-top: 0px !important;
     padding-top: 0px !important;
     height: auto !important;
 }
-div[data-testid="stVerticalBlock"] {
+div[data-testid="stColumn"]:first-child div[data-testid="stVerticalBlock"],
+div[data-testid="column"]:first-child div[data-testid="stVerticalBlock"] {
     gap: 0px !important;
 }
 
-/* 3. ЗАЩИТА И СТИЛИЗАЦИЯ КНОПКИ "ВЫПОЛНИТЬ RAG" (Параметр primary=True) */
+/* 3. СТИЛИЗАЦИЯ ДЛЯ ГЛАВНЫХ КНОПОК ИНТЕРФЕЙСА (RAG, ИНДЕКСАЦИЯ И Т.Д.) */
 div.stButton > button[data-testid="baseButton-primary"] {
     background: linear-gradient(135deg, #007acc, #005999) !important;
     color: #ffffff !important;
@@ -162,8 +147,8 @@ div.stButton > button[data-testid="baseButton-primary"] {
     padding: 10px 20px !important;
     border-radius: 4px !important;
     box-shadow: 0 4px 12px rgba(0, 122, 204, 0.4) !important;
-    height: auto !important;
-    width: auto !important; /* Главная кнопка не должна быть на весь экран */
+    height: 40px !important;
+    width: 100% !important;
     margin-top: 10px !important;
     display: inline-flex !important;
 }
@@ -181,7 +166,7 @@ div.stButton > button[data-testid="baseButton-primary"]:hover {
     border-left: 4px solid #007acc !important;
     border-radius: 4px;
     padding: 12px;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 .chunk-name {
     font-weight: bold;
@@ -196,8 +181,8 @@ div.stButton > button[data-testid="baseButton-primary"]:hover {
     border: 1px solid #3c3c3c !important;
     border-radius: 6px;
     padding: 15px;
-    margin-top: 10px;
-    margin-bottom: 20px;
+    margin-top: 15px;
+    margin-bottom: 25px;
 }
 .llm-title { color: #569cd6 !important; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
 
@@ -251,7 +236,7 @@ def get_controller(file_path, model_key: str, db_path: str) -> RAGController:
 # SIDEBAR: ПАНЕЛЬ УПРАВЛЕНИЯ
 # ──────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 🔍 CodeLens")  # Исправлено название
+    st.markdown("### 🔍 CodeLens")
     st.caption("Ростелеком Чемпионат • Финал")
     st.divider()
 
@@ -266,7 +251,7 @@ with st.sidebar:
     )
     db_path = st.text_input("Векторное хранилище", value="data/vector_db")
     st.session_state.project_path = st.text_input("Код-директория для Explorer", value="projects")
-    
+
     top_k = st.slider("Фрагментов в контекст (Top-K)", 1, 15, 5)
     st.divider()
 
@@ -275,7 +260,7 @@ with st.sidebar:
 
     if llm_enabled:
         env_key = os.getenv("OPEN_ROUTER_API", "")
-        
+
         if env_key:
             st.success("🤖 Ключ OpenRouter успешно загружен из .env")
             with st.expander("Посмотреть / Изменить API-ключ"):
@@ -287,11 +272,11 @@ with st.sidebar:
         else:
             st.warning("⚠️ Ключ OPENROUTER_API_KEY не найден в .env")
             openrouter_key = st.text_input(
-                "Введіть API-ключ вручную",
+                "Введите API-ключ вручную",
                 type="password",
                 value=""
             )
-        
+
         if openrouter_key:
             st.session_state.llm_client = LLMClient(openrouter_api_key=openrouter_key)
         else:
@@ -322,35 +307,34 @@ def render_explorer_tree(root_dir):
         return
 
     ignored = {'.git', '__pycache__', '.pytest_cache', 'venv', '.streamlit', 'data', 'target'}
-    
+
     if "expanded_folders" not in st.session_state:
         st.session_state["expanded_folders"] = set()
 
     def _build_flat_tree(current_path, depth=0):
         try:
             entries = sorted(os.listdir(current_path), key=lambda x: (not os.path.isdir(os.path.join(current_path, x)), x.lower()))
-            
+
             for entry in entries:
                 if entry in ignored or entry.startswith('.'):
                     continue
-                    
+
                 full_path = os.path.join(current_path, entry)
                 is_dir = os.path.isdir(full_path)
-                
+
                 indent = "\u00A0" * (depth * 4)
-                
+
                 if is_dir:
                     is_expanded = full_path in st.session_state.expanded_folders
                     icon = "📂" if is_expanded else "📁"
-                    
-                    # Добавляем контейнер с классом 'explorer-node'
+
                     if st.button(f"{indent}{icon} {entry}", key=f"dir_{full_path}", use_container_width=True):
                         if is_expanded:
                             st.session_state.expanded_folders.remove(full_path)
                         else:
                             st.session_state.expanded_folders.add(full_path)
                         st.rerun()
-                    
+
                     if is_expanded:
                         _build_flat_tree(full_path, depth + 1)
 
@@ -359,7 +343,7 @@ def render_explorer_tree(root_dir):
                     if st.button(f"{indent}📄 {entry}", key=f"file_{full_path}", use_container_width=True):
                         st.session_state.selected_file = full_path
                         st.rerun()
-                        
+
         except Exception as e:
             st.error(f"Ошибка проводника: {e}")
 
@@ -370,7 +354,7 @@ def render_explorer_tree(root_dir):
 # ЭКРАН: РАЗРАБОТКА & ПОИСК
 # ══════════════════════════════════════════════
 if page == "Разработка & Поиск":
-    
+
     def get_language_by_filename(filename: str) -> str:
         if not filename:
             return "text"
@@ -416,7 +400,7 @@ if page == "Разработка & Поиск":
                 st.session_state.chat_history.append((current_query, answer))
             except Exception as e:
                 st.session_state.llm_answer = f"{e}"
-        
+
         st.session_state.temp_query = ""
         st.rerun()
 
@@ -429,7 +413,7 @@ if page == "Разработка & Поиск":
 
     with col_chat:
         st.markdown('<div class="panel-title">🤖 Интеллектуальный Поиск & ИИ Чат</div>', unsafe_allow_html=True)
-        
+
         query_input = st.text_input("Поисковый семантический запрос к репозиторию", placeholder="Например: как генерируется хэш пароля?", label_visibility="collapsed")
         search_clicked = st.button("Выполнить RAG-анализ ⚡", use_container_width=True, type="primary")
 
@@ -445,13 +429,13 @@ if page == "Разработка & Поиск":
 
     with col_editor:
         st.markdown('<div class="panel-title">📝 Просмотр кода</div>', unsafe_allow_html=True)
-        
+
         if st.session_state.selected_file and os.path.exists(st.session_state.selected_file):
             try:
                 with open(st.session_state.selected_file, "r", encoding="utf-8", errors="replace") as f:
                     content = f.read()
                     lines = content.splitlines()
-                
+
                 lang = get_language_by_filename(st.session_state.selected_file)
 
                 target_start, target_end = None, None
@@ -468,7 +452,7 @@ if page == "Разработка & Поиск":
                     st.code(content, language=lang, line_numbers=True)
                 else:
                     st.code(content, language=lang, line_numbers=True)
-                    
+
             except Exception as e:
                 st.error(f"Ошибка чтения: {e}")
 
@@ -518,7 +502,7 @@ if page == "Разработка & Поиск":
                   <div style="color:#858585; font-size:11px; margin-top:4px;">📄 {file_path} | строки {start}–{end}</div>
                 </div>
                 """, unsafe_allow_html=True)
-                
+
                 rag_lang = get_language_by_filename(file_path)
                 st.code(content, language=rag_lang)
 
@@ -556,7 +540,7 @@ elif page == "Индексация проекта":
             try:
                 from ml_core.pipeline import IndexingPipeline
                 pipeline = IndexingPipeline(db_client=ctrl.db_client, embedder=ctrl.embedder)
-                
+
                 progress.progress(40, "Tree-Sitter парсинг и построение блоков кода...")
                 stats = pipeline.index_project(project_path)
                 progress.progress(100, "Готово!")
