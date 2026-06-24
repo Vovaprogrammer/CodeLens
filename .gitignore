@@ -1,0 +1,23 @@
+# Виртуальное окружение
+.venv/
+venv/
+
+# Кэш Python
+__pycache__/
+*.pyc
+
+# ChromaDB
+data/
+
+# IDE
+.idea/
+.vscode/
+
+# Streamlit
+.streamlit/
+
+# OS
+.DS_Store
+Thumbs.db
+
+.env
