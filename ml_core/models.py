@@ -1,3 +1,5 @@
+import gc
+import torch
 from sentence_transformers import SentenceTransformer
 from typing import List
 
@@ -11,28 +13,37 @@ class EmbeddingModelRegistry:
         if model_key not in self.MODELS:
             raise ValueError(f"Модель {model_key} не поддерживается. Выберите из: {list(self.MODELS.keys())}")
         
-        self._loaded_models = {}
+        self.current_model_key = None
         
         self.set_active_model(model_key)
 
     def set_active_model(self, model_key: str):
         """
-        Динамически переключает активную модель.
+        Переключает активную модель.
         Используется контроллером RAGController при выборе модели в UI Streamlit.
         """
         if model_key not in self.MODELS:
             raise ValueError(f"Модель {model_key} не поддерживается.")
             
+        if self.current_model_key == model_key:
+            return
+
+        if self.current_model_key is not None:
+            print(f"Выгрузка и полное удаление модели {self.current_model_key}...")
+            
+            self.model = None
+            
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                
+            print(f"Память от {self.current_model_key} полностью освобождена.")
         self.current_model_key = model_key
         self.model_name = self.MODELS[model_key]
         
-        if model_key in self._loaded_models:
-            self.model = self._loaded_models[model_key]
-        else:
-            print(f"Загрузка модели эмбеддингов: {self.model_name}...")
-            self.model = SentenceTransformer(self.model_name)
-            self._loaded_models[model_key] = self.model
-            print(f"Модель {model_key} успешно инициализирована.")
+        print(f"Загрузка модели эмбеддингов: {self.model_name}...")
+        self.model = SentenceTransformer(self.model_name)
+        print(f"Модель {model_key} успешно инициализирована.")
 
     def get_embedding_dimension(self) -> int:
         """Возвращает размерность вектора модели (нужно для инициализации коллекции ChromaDB)"""
@@ -42,7 +53,7 @@ class EmbeddingModelRegistry:
         """Генерация эмбеддингов для списка текстов (батчем)"""
         if not texts:
             return []
-        embeddings = self.model.encode(texts, show_progress_bar=True)
+        embeddings = self.model.encode(texts, show_progress_bar=True, batch_size=8)
         return embeddings.tolist()
 
     def embed_query(self, query: str) -> List[float]:
