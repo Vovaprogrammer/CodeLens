@@ -3,8 +3,8 @@ sentence-transformers>=2.7.0
 chromadb>=0.5.0
 
 # Parsing
-tree-sitter>=0.21.0
-tree-sitter-languages>=1.10.2
+tree-sitter==0.21.3
+tree-sitter-languages==1.10.2
 
 # Web UI
 streamlit>=1.35.0
@@ -12,8 +12,6 @@ streamlit>=1.35.0
 # Data
 pydantic>=2.0.0
 
-# BM25
-rank-bm25>=0.2.2
 
 torchvision>=0.17.0
 
