@@ -1,7 +1,21 @@
-dataset_case3_v1.0_fix.zip
-codebase_python.zip
-gymhero/
+# Виртуальное окружение
 .venv/
 venv/
+
+# Кэш Python
 __pycache__/
+*.pyc
+
+# ChromaDB
 data/
+
+# IDE
+.idea/
+.vscode/
+
+# Streamlit
+.streamlit/
+
+# OS
+.DS_Store
+Thumbs.db
